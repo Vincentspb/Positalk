@@ -7,14 +7,55 @@
 
 import SwiftUI
 
-@main
-struct SwiftUI_PositalkApp: App {
-    let persistenceController = PersistenceController.shared
-
+@main struct SwiftUI_PositalkApp: App {
+    
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            SceneSwitcher()
         }
+    }
+}
+
+enum CurrentView: Int {
+    case onboarding
+    case addname
+    case main
+}
+
+class AppState: ObservableObject {
+    @AppStorage("scene") var switchScene = CurrentView.onboarding
+//    @Published var switchScene = CurrentView.main
+    @AppStorage("nickname") var nickname = ""
+}
+
+struct SceneSwitcher: View {
+    @StateObject var appState = AppState()
+    let persistenceController = PersistenceController.shared
+    let transition: AnyTransition = .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))
+    
+    var body: some View {
+        Group {
+            switch(appState.switchScene) {
+            case .onboarding:
+                BoardingView1()
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                    .environmentObject(appState)
+                    .transition(transition)
+                
+            case .addname:
+                BoardingView2()
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                    .environmentObject(appState)
+                    .transition(transition)
+                
+            case .main:
+                TabBarView()
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                    .environmentObject(appState)
+                    .transition(transition)
+            }
+        }
+        .animation(.default, value: appState.switchScene)
     }
 }
